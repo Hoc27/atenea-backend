@@ -1,0 +1,73 @@
+// Instituto Atenea — Esquema de datos (Prisma)
+// docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ContentBlock {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model DownloadCategory {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  downloads Download[]
+}
+
+model Download {
+  id          String            @id @default(cuid())
+  title       String
+  description String?
+  fileUrl     String
+  fileName    String
+  mimeType    String
+  size        Int
+  categoryId  String?
+  category    DownloadCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  order       Int               @default(0)
+  published   Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  content     String
+  coverImage  String?
+  category    String?
+  published   Boolean   @default(false)
+  featured    Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  area      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}

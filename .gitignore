@@ -1,0 +1,25 @@
+# dependencies
+/node_modules
+
+# build
+/dist
+*.tsbuildinfo
+
+# environment (nunca subir secretos)
+.env
+.env.*
+!.env.example
+
+# base de datos local
+prisma/*.db
+prisma/*.db-journal
+prisma/migrations/dev.db*
+
+# archivos subidos por usuarios
+/uploads
+
+# logs
+*.log
+npm-debug.log*
+
+/src/generated/prisma

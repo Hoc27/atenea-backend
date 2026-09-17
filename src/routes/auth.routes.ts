@@ -4,10 +4,14 @@ import { verifyPassword } from "../security";
 import { authenticate } from "../plugins/authenticate";
 import { isProduction } from "../config";
 
+// En producción el frontend y el backend viven en subdominios distintos
+// (p. ej. atenea.* y ateneab.*), por lo que las cookies deben ser
+// SameSite=None; Secure para viajar en peticiones cross-site con credenciales.
+// En desarrollo (http://localhost) se usa "lax" porque "none" exige Secure.
 const cookieFlags = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: "strict" as const,
+  sameSite: (isProduction ? "none" : "lax") as "none" | "lax",
   path: "/",
 };
 
@@ -55,7 +59,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     "/api/auth/logout",
     { onRequest: app.csrfProtection },
     async (_req, reply) => {
-      reply.clearCookie("token", { path: "/" });
+      reply.clearCookie("token", cookieFlags);
       return { ok: true };
     }
   );

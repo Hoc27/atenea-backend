@@ -37,8 +37,29 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
     crossOriginResourcePolicy: { policy: "cross-origin" },
   });
 
+  // Lista blanca de orígenes permitidos, normalizada (sin espacios ni "/" final).
+  const allowedOrigins = config.CORS_ORIGIN.split(",")
+    .map((o) => o.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+
   await app.register(cors, {
-    origin: config.CORS_ORIGIN.split(",").map((o) => o.trim()),
+    origin(origin, cb) {
+      // Peticiones sin Origin (curl, health checks, same-origin) se permiten.
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      const normalized = origin.replace(/\/+$/, "");
+      if (allowedOrigins.includes(normalized)) {
+        cb(null, true);
+        return;
+      }
+      app.log.warn(
+        { origin, allowedOrigins },
+        "CORS: origen no permitido"
+      );
+      cb(null, false);
+    },
     credentials: true,
   });
 
@@ -52,7 +73,8 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   await app.register(csrfProtection, {
     cookieOpts: {
       httpOnly: true,
-      sameSite: "strict",
+      // Cross-site (subdominios distintos) requiere SameSite=None; Secure.
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
       secure: isProduction,
     },

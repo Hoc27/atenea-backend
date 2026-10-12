@@ -132,43 +132,50 @@ async function seedPosts(): Promise<void> {
     slug: string;
     excerpt: string;
     content: string;
+    coverImage: string | null;
     category: string;
     published: boolean;
     featured: boolean;
     publishedAt: Date | null;
   }> = [
     {
-      title: "Inicio del año lectivo 2026",
-      slug: "inicio-ano-lectivo-2026",
-      excerpt: "Damos la bienvenida a todos nuestros estudiantes.",
+      title: "Feria Familiar: Un Espacio de Encuentro y Aprendizaje",
+      slug: "feria-familiar",
+      excerpt:
+        "El domingo 27 de septiembre, Instituto Atenea abrió sus puertas para la Feria Familiar, un espacio de encuentro y aprendizaje para toda la comunidad.",
       content:
-        "El Instituto Atenea inicia el año lectivo 2026 con nuevas instalaciones y programas académicos renovados.",
-      category: "Noticias",
+        "El domingo 27 de septiembre, Instituto Atenea abrió sus puertas para la Feria Familiar, un espacio diseñado para que padres, estudiantes y comunidad compartan momentos significativos. Durante toda la jornada, desde las 9:00 AM hasta las 4:30 PM, las familias disfrutaron de actividades interactivas, exposiciones de proyectos estudiantiles y experiencias de aprendizaje vivencial.\n\nEste evento refuerza nuestro compromiso con la educación integral, donde la familia es parte fundamental del proceso formativo. Fue una oportunidad para celebrar los logros alcanzados y fortalecer el vínculo entre la institución y la comunidad que la respalda.",
+      coverImage: "/images/noticias/feria-familiar-01.jpg",
+      category: "Comunidad",
       published: true,
       featured: true,
-      publishedAt: new Date("2026-01-15T09:00:00Z"),
+      publishedAt: new Date("2026-09-27T12:00:00Z"),
     },
     {
-      title: "Feria de Ciencias 2026",
-      slug: "feria-de-ciencias-2026",
-      excerpt: "Nuestros estudiantes presentan proyectos innovadores.",
+      title: "Festival Folklórico 2026: Celebrando Nuestras Raíces",
+      slug: "festival-folklorico-2026",
+      excerpt:
+        "El viernes 21 de agosto, Instituto Atenea conmemoró sus tradiciones con música, danzas y el color de nuestra identidad panameña.",
       content:
-        "La feria de ciencias reunió a estudiantes de todos los niveles con proyectos sobre energía renovable y robótica.",
-      category: "Eventos",
+        "El viernes 21 de agosto, Instituto Atenea conmemoró sus tradiciones con el Festival Folklórico 2026, una celebración llena de color, música y danzas que reflejan la riqueza cultural de nuestro país.\n\nNuestros estudiantes se convirtieron en embajadores de nuestra identidad, presentando números artísticos que honran el patrimonio panameño. Este festival trasciende lo meramente artístico: es una herramienta pedagógica que conecta a nuestros alumnos con su historia y les enseña a valorar la diversidad cultural. Fue un día de orgullo institucional donde cada presentación llevaba consigo la dedicación y el aprendizaje de meses de preparación.",
+      coverImage: "/images/noticias/festival-folklorico-01.jpg",
+      category: "Cultura",
       published: true,
       featured: false,
-      publishedAt: new Date("2026-03-10T14:00:00Z"),
+      publishedAt: new Date("2026-08-21T12:00:00Z"),
     },
     {
-      title: "Proceso de admisión abierto",
-      slug: "proceso-de-admision-abierto",
-      excerpt: "Ya puedes inscribir a tus hijos para el próximo periodo.",
+      title: "Presentación de Bellas Artes y Recital 2026: El Arte como Expresión",
+      slug: "bellas-artes-recital-2026",
+      excerpt:
+        "En julio de 2026, Instituto Atenea presentó su muestra de Bellas Artes y Recital, celebrando el talento artístico de sus estudiantes.",
       content:
-        "El proceso de admisión para el periodo 2026-2027 ya se encuentra abierto. Consulta los requisitos en la sección de descargas.",
-      category: "Admisiones",
-      published: false,
+        "En julio de 2026, Instituto Atenea presentó su tradicional muestra de Bellas Artes y Recital, un evento que celebra el talento artístico de nuestros estudiantes en música, danza, teatro y artes visuales.\n\nEsta presentación es el resultado de un proceso pedagógico integral donde nuestros alumnos desarrollan confianza, creatividad y disciplina. Cada número reflejó horas de trabajo colaborativo, mentoría de docentes especializados y el compromiso de nuestros estudiantes con la excelencia. El recital demostró que en Instituto Atenea, el arte no es solo una asignatura, sino una herramienta transformadora que enriquece la formación de nuestros jóvenes.",
+      coverImage: "/images/noticias/festival-de-arte-01.jpg",
+      category: "Arte",
+      published: true,
       featured: false,
-      publishedAt: null,
+      publishedAt: new Date("2026-07-15T12:00:00Z"),
     },
   ];
 
@@ -179,6 +186,7 @@ async function seedPosts(): Promise<void> {
         title: post.title,
         excerpt: post.excerpt,
         content: post.content,
+        coverImage: post.coverImage,
         category: post.category,
         published: post.published,
         featured: post.featured,
@@ -188,7 +196,13 @@ async function seedPosts(): Promise<void> {
     });
   }
 
-  console.log(`Posts listos: ${posts.length}`);
+  // Elimina posts que ya no forman parte del seed (placeholders/datos de prueba).
+  const slugs = posts.map((p) => p.slug);
+  const removed = await prisma.post.deleteMany({
+    where: { slug: { notIn: slugs } },
+  });
+
+  console.log(`Posts listos: ${posts.length} (eliminados: ${removed.count})`);
 }
 
 async function seedMedia(): Promise<void> {

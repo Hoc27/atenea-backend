@@ -15,6 +15,9 @@ const envSchema = z.object({
   ADMIN_NAME: z.string().default("Administrador"),
   UPLOAD_DIR: z.string().default("uploads"),
   UPLOAD_MAX_MB: z.coerce.number().int().positive().default(20),
+  ADMISSION_EMAIL: z.string().email().default("admisiones@institutoatenea.edu.pa"),
+  FROM_EMAIL: z.string().email().default("no-reply@institutoatenea.edu.pa"),
+  RESEND_API_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

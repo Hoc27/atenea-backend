@@ -16,6 +16,7 @@ import { contentRoutes } from "./routes/content.routes";
 import { downloadsRoutes } from "./routes/downloads.routes";
 import { postsRoutes } from "./routes/posts.routes";
 import { mediaRoutes } from "./routes/media.routes";
+import { admissionRoutes } from "./routes/admission.routes";
 
 export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   const app = Fastify({
@@ -106,6 +107,7 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   await app.register(downloadsRoutes);
   await app.register(postsRoutes);
   await app.register(mediaRoutes);
+  await app.register(admissionRoutes);
 
   app.setErrorHandler((err: FastifyError, req: FastifyRequest, reply: FastifyReply) => {
     const statusCode =

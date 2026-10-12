@@ -74,3 +74,13 @@ model Media {
   post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 }
+
+model AdmissionRequest {
+  id           String   @id @default(cuid())
+  studentName  String
+  level        String?
+  contactEmail String?
+  data         Json
+  status       String   @default("new")
+  createdAt    DateTime @default(now())
+}

@@ -85,6 +85,7 @@ export async function postsRoutes(app: FastifyInstance): Promise<void> {
       const { slug } = req.params as { slug: string };
       const post = await prisma.post.findFirst({
         where: { slug, published: true },
+        include: { images: { orderBy: { order: "asc" } } },
       });
       if (!post) return reply.code(404).send({ error: "No encontrado" });
       return post;
@@ -96,6 +97,7 @@ export async function postsRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/admin/posts", { preHandler: authenticate }, async () => {
     const items = await prisma.post.findMany({
       orderBy: { createdAt: "desc" },
+      include: { images: { orderBy: { order: "asc" } } },
     });
     return { items };
   });
@@ -210,6 +212,47 @@ export async function postsRoutes(app: FastifyInstance): Promise<void> {
         },
       });
       return post;
+    }
+  );
+
+  app.put(
+    "/api/admin/posts/:id/images",
+    {
+      onRequest: app.csrfProtection,
+      preHandler: authenticate,
+      schema: {
+        params: {
+          type: "object",
+          required: ["id"],
+          additionalProperties: false,
+          properties: { id: { type: "string" } },
+        },
+        body: {
+          type: "object",
+          required: ["imageIds"],
+          additionalProperties: false,
+          properties: { imageIds: { type: "array", items: { type: "string" } } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const { imageIds } = req.body as { imageIds: string[] };
+      const existing = await prisma.post.findUnique({ where: { id } });
+      if (!existing) return reply.code(404).send({ error: "No encontrado" });
+
+      await prisma.media.updateMany({ where: { postId: id }, data: { postId: null } });
+      for (let i = 0; i < imageIds.length; i++) {
+        await prisma.media.update({
+          where: { id: imageIds[i] },
+          data: { postId: id, order: i },
+        });
+      }
+
+      return prisma.post.findUnique({
+        where: { id },
+        include: { images: { orderBy: { order: "asc" } } },
+      });
     }
   );
 

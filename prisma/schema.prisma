@@ -61,6 +61,7 @@ model Post {
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  images      Media[]
 }
 
 model Media {
@@ -69,5 +70,7 @@ model Media {
   alt       String?
   area      String?
   order     Int      @default(0)
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 }

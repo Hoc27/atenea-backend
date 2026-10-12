@@ -20,12 +20,14 @@ export async function mediaRoutes(app: FastifyInstance): Promise<void> {
         mime.startsWith("image/")
       );
       const order = fields.order ? Number.parseInt(fields.order, 10) : 0;
+      const postId = fields.postId?.trim() || null;
       const item = await prisma.media.create({
         data: {
           url: file.url,
           alt: fields.alt?.trim() || null,
           area: fields.area?.trim() || null,
           order: Number.isFinite(order) ? order : 0,
+          postId,
         },
       });
       return reply.code(201).send(item);
@@ -51,13 +53,19 @@ export async function mediaRoutes(app: FastifyInstance): Promise<void> {
             alt: { type: ["string", "null"] },
             area: { type: ["string", "null"] },
             order: { type: "integer" },
+            postId: { type: ["string", "null"] },
           },
         },
       },
     },
     async (req, reply) => {
       const { id } = req.params as { id: string };
-      const body = req.body as { alt?: string | null; area?: string | null; order?: number };
+      const body = req.body as {
+        alt?: string | null;
+        area?: string | null;
+        order?: number;
+        postId?: string | null;
+      };
       const existing = await prisma.media.findUnique({ where: { id } });
       if (!existing) return reply.code(404).send({ error: "No encontrado" });
 
@@ -67,6 +75,7 @@ export async function mediaRoutes(app: FastifyInstance): Promise<void> {
           alt: body.alt === undefined ? existing.alt : body.alt,
           area: body.area === undefined ? existing.area : body.area,
           order: body.order ?? existing.order,
+          postId: body.postId === undefined ? existing.postId : body.postId,
         },
       });
       return item;

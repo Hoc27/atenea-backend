@@ -3,6 +3,7 @@ import { createWriteStream } from "node:fs";
 import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
+import sharp from "sharp";
 import type { FastifyRequest } from "fastify";
 import type { MultipartFile } from "@fastify/multipart";
 import { config } from "../config";
@@ -46,16 +47,25 @@ export async function saveUpload(
     throw httpError("Tipo de archivo no permitido", 400);
   }
 
-  const name = `${randomUUID()}${ext}`;
   await mkdir(config.UPLOAD_DIR, { recursive: true });
+
+  const isImage = file.mimetype.startsWith("image/");
+  const name = `${randomUUID()}${isImage ? ".webp" : ext}`;
   const destination = path.join(config.UPLOAD_DIR, name);
-  await pipeline(file.file, createWriteStream(destination));
+
+  if (isImage) {
+    const transformer = sharp().rotate().webp({ quality: 90 });
+    await pipeline(file.file, transformer, createWriteStream(destination));
+  } else {
+    await pipeline(file.file, createWriteStream(destination));
+  }
+
   const info = await stat(destination);
 
   return {
     url: `/uploads/${name}`,
     name,
-    mime: file.mimetype,
+    mime: isImage ? "image/webp" : file.mimetype,
     size: info.size,
   };
 }

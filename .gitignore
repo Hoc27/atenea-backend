@@ -22,4 +22,12 @@ prisma/migrations/dev.db*
 *.log
 npm-debug.log*
 
+# archivos comprimidos (backups de imágenes, etc.)
+*.zip
+*.tar
+*.tar.gz
+*.gz
+*.7z
+*.rar
+
 /src/generated/prisma

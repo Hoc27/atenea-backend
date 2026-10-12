@@ -16,14 +16,6 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "esbuild"
-    ]
-  },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
     "@fastify/cors": "^11.3.0",

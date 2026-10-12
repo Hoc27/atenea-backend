@@ -205,47 +205,11 @@ async function seedPosts(): Promise<void> {
   console.log(`Posts listos: ${posts.length} (eliminados: ${removed.count})`);
 }
 
-async function seedMedia(): Promise<void> {
-  const items: Array<{ url: string; alt: string; area: string; order: number }> =
-    [
-      {
-        url: "/images/homepage/hero.jpg",
-        alt: "Fachada del Instituto Atenea",
-        area: "homepage",
-        order: 1,
-      },
-      {
-        url: "/images/galeria/aula.jpg",
-        alt: "Estudiantes en el aula",
-        area: "galeria",
-        order: 1,
-      },
-      {
-        url: "/images/galeria/laboratorio.jpg",
-        alt: "Laboratorio de ciencias",
-        area: "galeria",
-        order: 2,
-      },
-    ];
-
-  for (const item of items) {
-    const existing = await prisma.media.findFirst({ where: { url: item.url } });
-    if (existing) {
-      await prisma.media.update({ where: { id: existing.id }, data: item });
-    } else {
-      await prisma.media.create({ data: item });
-    }
-  }
-
-  console.log(`Media listo: ${items.length}`);
-}
-
 async function main(): Promise<void> {
   await seedAdmin();
   await seedContentBlocks();
   await seedDownloads();
   await seedPosts();
-  await seedMedia();
   console.log("Seed completado.");
 }
 

@@ -7,9 +7,46 @@ import { handleUpload } from "../lib/upload";
 import { config } from "../config";
 
 export async function mediaRoutes(app: FastifyInstance): Promise<void> {
-  app.get("/api/media", async () => {
-    const items = await prisma.media.findMany({ orderBy: { order: "asc" } });
-    return { items };
+  app.get("/api/media", async (req) => {
+    const query = req.query as {
+      limit?: string;
+      offset?: string;
+      area?: string;
+      q?: string;
+    };
+
+    const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 200) : undefined;
+    const offset = query.offset ? Math.max(Number.parseInt(query.offset, 10), 0) : undefined;
+
+    const where: Record<string, unknown> = {};
+    if (query.area) where.area = query.area;
+    if (query.q) {
+      where.OR = [
+        { alt: { contains: query.q, mode: "insensitive" } },
+        { area: { contains: query.q, mode: "insensitive" } },
+      ];
+    }
+
+    const [items, total, allAreas] = await Promise.all([
+      prisma.media.findMany({
+        where,
+        orderBy: { order: "asc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.media.count({ where }),
+      prisma.media.findMany({
+        select: { area: true },
+        distinct: ["area"],
+        orderBy: { area: "asc" },
+      }),
+    ]);
+
+    const areas = allAreas
+      .map((m) => m.area)
+      .filter((a): a is string => Boolean(a));
+
+    return { items, total, areas };
   });
 
   app.post(

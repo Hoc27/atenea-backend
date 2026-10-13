@@ -69,6 +69,9 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
     global: true,
     max: 300,
     timeWindow: "1 minute",
+    // Los archivos estáticos (/uploads) no deben contar contra el límite:
+    // navegar por la galería cargaría decenas de imágenes y dispararía 429.
+    allowList: (req) => req.url.startsWith("/uploads/"),
   });
 
   await app.register(cookie);
@@ -96,6 +99,11 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   await app.register(fastifyStatic, {
     root: path.resolve(config.UPLOAD_DIR),
     prefix: "/uploads/",
+    // Cache de imágenes/archivos: los nombres son UUIDs (inmutables),
+    // por lo que se pueden cachear de forma agresiva en el navegador y CDN.
+    cacheControl: true,
+    immutable: true,
+    maxAge: "30 days",
   });
 
   app.get("/api/health", async () => ({

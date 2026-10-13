@@ -9,7 +9,7 @@
 .env
 .env.*
 !.env.example
-
+*.test.ts
 # base de datos local
 prisma/*.db
 prisma/*.db-journal

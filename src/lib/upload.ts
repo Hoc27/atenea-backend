@@ -1,25 +1,19 @@
-import { randomUUID } from "node:crypto";
+﻿import { randomUUID } from "node:crypto";
 import { createWriteStream } from "node:fs";
-import { mkdir, stat } from "node:fs/promises";
+import { mkdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import sharp from "sharp";
 import type { FastifyRequest } from "fastify";
 import type { MultipartFile } from "@fastify/multipart";
-import { config } from "../config";
+import { env } from "../config/env";
+import {
+  detectTypeFromFile,
+  extForMime,
+  isAllowedMime,
+} from "./file-validation";
 
-const ALLOWED_MIME: Record<string, string> = {
-  "application/pdf": ".pdf",
-  "application/msword": ".doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-  "application/vnd.ms-excel": ".xls",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
-  "application/zip": ".zip",
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-  "image/gif": ".gif",
-};
+type PartsRequest = Pick<FastifyRequest, "parts">;
 
 export type UploadedFile = {
   url: string;
@@ -41,37 +35,47 @@ export async function saveUpload(
   file: MultipartFile,
   accept?: (mime: string) => boolean
 ): Promise<UploadedFile> {
-  const ext = ALLOWED_MIME[file.mimetype];
-  if (!ext || (accept && !accept(file.mimetype))) {
-    file.file.resume();
+  await mkdir(env.UPLOAD_DIR, { recursive: true });
+
+  // 1) Guardar en temporal sin confiar en el MIME declarado por el cliente.
+  const tempPath = path.join(env.UPLOAD_DIR, `${randomUUID()}.part`);
+  await pipeline(file.file, createWriteStream(tempPath));
+
+  // 2) Validar el tipo real por magic bytes (whitelist + filtro del llamador).
+  const detected = await detectTypeFromFile(tempPath);
+  if (
+    !detected ||
+    !isAllowedMime(detected.mime) ||
+    (accept && !accept(detected.mime))
+  ) {
+    await rm(tempPath, { force: true });
     throw httpError("Tipo de archivo no permitido", 400);
   }
 
-  await mkdir(config.UPLOAD_DIR, { recursive: true });
-
-  const isImage = file.mimetype.startsWith("image/");
-  const name = `${randomUUID()}${isImage ? ".webp" : ext}`;
-  const destination = path.join(config.UPLOAD_DIR, name);
+  // 3) Imágenes: re-encodear a WebP (elimina metadatos/contenido incrustado).
+  const isImage = detected.mime.startsWith("image/");
+  let finalName: string;
+  let mime: string;
 
   if (isImage) {
-    const transformer = sharp().rotate().webp({ quality: 90 });
-    await pipeline(file.file, transformer, createWriteStream(destination));
+    finalName = `${randomUUID()}.webp`;
+    await sharp(tempPath).rotate().webp({ quality: 90 }).toFile(
+      path.join(env.UPLOAD_DIR, finalName)
+    );
+    await rm(tempPath, { force: true });
+    mime = "image/webp";
   } else {
-    await pipeline(file.file, createWriteStream(destination));
+    finalName = `${randomUUID()}${extForMime(detected.mime)}`;
+    await rename(tempPath, path.join(env.UPLOAD_DIR, finalName));
+    mime = detected.mime;
   }
 
-  const info = await stat(destination);
-
-  return {
-    url: `/uploads/${name}`,
-    name,
-    mime: isImage ? "image/webp" : file.mimetype,
-    size: info.size,
-  };
+  const info = await stat(path.join(env.UPLOAD_DIR, finalName));
+  return { url: `/uploads/${finalName}`, name: finalName, mime, size: info.size };
 }
 
 export async function handleUpload(
-  request: FastifyRequest,
+  request: PartsRequest,
   accept?: (mime: string) => boolean
 ): Promise<UploadResult> {
   const fields: Record<string, string> = {};

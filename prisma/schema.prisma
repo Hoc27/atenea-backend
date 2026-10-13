@@ -11,12 +11,13 @@ datasource db {
 }
 
 model Admin {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   name         String
   passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime? // baja lógica: impide el login sin borrar el registro
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model ContentBlock {
@@ -76,11 +77,66 @@ model Media {
 }
 
 model AdmissionRequest {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
+  /// @pii @purpose interes_legitimo
   studentName  String
+  /// @pii @purpose interes_legitimo
   level        String?
+  /// @pii @purpose contrato
   contactEmail String?
+  /// @sensitive  PII y categorías especiales (menores, salud, religión), cifrado en `data`
   data         Json
-  status       String   @default("new")
-  createdAt    DateTime @default(now())
+  status       String    @default("new")
+  deletedAt    DateTime? // marca de anonimización (Art. 17)
+  restrictedAt DateTime? // limitación del tratamiento (Art. 18)
+  createdAt    DateTime  @default(now())
+}
+
+enum DsarType {
+  ACCESS
+  RECTIFICATION
+  ERASURE
+  RESTRICTION
+  PORTABILITY
+  OBJECTION
+}
+
+enum DsarStatus {
+  RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+/// Solicitud de derechos del titular (Art. 15-22). Sin relación a propósito,
+/// para sobrevivir a la anonimización del titular.
+model DataSubjectRequest {
+  id         String     @id @default(uuid())
+  type       DsarType
+  status     DsarStatus @default(RECEIVED)
+  /// Identificador del titular sin datos sensibles (p. ej. email de contacto).
+  subjectRef String?
+  receivedAt DateTime   @default(now())
+  dueAt      DateTime
+  completedAt DateTime?
+  notes      String?
+
+  @@index([status, dueAt])
+}
+
+/// Registro de auditoría append-only (solo INSERT desde la aplicación).
+model AuditLog {
+  id            BigInt   @id @default(autoincrement())
+  at            DateTime @default(now())
+  principalId   String?
+  principalRole String?
+  action        String
+  entity        String?
+  entityId      String?
+  requestId     String?
+  ipTrunc       String?
+  meta          Json?
+
+  @@index([principalId, at])
+  @@index([entity, entityId, at])
 }

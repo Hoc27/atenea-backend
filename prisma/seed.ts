@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { hashPassword } from "../src/security";
+import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
 
@@ -8,14 +8,24 @@ async function seedAdmin(): Promise<void> {
   const email = (
     process.env.ADMIN_EMAIL ?? "admin@institutoatenea.edu.pa"
   ).toLowerCase();
-  const password = process.env.ADMIN_PASSWORD ?? "CambiarEstaClave_123!";
+  const password = process.env.ADMIN_PASSWORD;
   const name = process.env.ADMIN_NAME ?? "Administrador";
+
+  // Sin valor por defecto: fuerza a definir una contraseña fuerte y evita
+  // el clásico "admin/CambiarEstaClave_123!" en cualquier despliegue.
+  if (!password || password.length < 12) {
+    throw new Error(
+      "ADMIN_PASSWORD no está definido o tiene menos de 12 caracteres. " +
+        "Defínelo en .env (p. ej. openssl rand -base64 24) antes de ejecutar el seed."
+    );
+  }
 
   const passwordHash = await hashPassword(password);
 
   const admin = await prisma.admin.upsert({
     where: { email },
-    update: { name },
+    // Actualiza también el hash: permite rotar la contraseña re-ejecutando el seed.
+    update: { name, passwordHash },
     create: { email, name, passwordHash },
   });
 

@@ -15,10 +15,13 @@ Gestiona el contenido del sitio: textos editables, archivos descargables (por se
 
 - **Helmet** (headers de seguridad), CORS restringido a un origen, `poweredBy` desactivado.
 - **Rate limiting** global + límite estricto en `/api/auth/login`.
-- **Autenticación JWT** en cookie `httpOnly` + `Secure` + `SameSite=Strict`.
+- **Autenticación JWT** en cookie `httpOnly` + `Secure` + `SameSite=None`(prod)/`lax`(dev); token con `exp`, `jti`, `iss`, `aud`.
+- **Deny-by-default**: hook global que exige autenticación salvo en rutas marcadas `config: { public: true }`.
 - **CSRF** con `@fastify/csrf-protection` (token en header `x-csrf-token`).
 - **Hash de contraseñas** con `crypto.scrypt` (sal aleatoria + comparación en tiempo constante).
-- **Validación de entrada** por JSON Schema en todas las rutas (rechaza campos inesperados).
+- **Validación y serialización** con Zod (`fastify-type-provider-zod`) en entrada **y salida** (lo no declarado no se expone).
+- **Cifrado en reposo** de los datos de admisión (PII y categorías especiales) con AES-256-GCM.
+- **Auditoría** append-only de acciones de administración y de login (`AuditLog`).
 - **Subida de archivos** con allowlist de MIME, nombre aleatorio (UUID), límite de tamaño y sin path traversal.
 - **Manejo de errores** que no expone stack traces ni internals en producción.
 - Secretos por variables de entorno; `.env` ignorado por git.
@@ -66,6 +69,7 @@ Admin (requieren JWT + CSRF):
 
 ## Notas
 
-- **Producción**: usa Postgres (`DATABASE_URL`), un `JWT_SECRET` largo y aleatorio, y `NODE_ENV=production` (activa cookies `Secure` y `trustProxy`).
+- **Producción**: usa Postgres (`DATABASE_URL`), `JWT_SECRET` (≥32) y `FIELD_ENCRYPTION_KEY` (64 hex) aleatorios, `NODE_ENV=production` (cookies `Secure`) y `TRUST_PROXY` con el nº de proxies real.
+- **Migraciones**: `pnpm exec prisma migrate deploy` como paso explícito del despliegue (no al arrancar).
 - Los archivos subidos se guardan en `./uploads` (ignorado por git) y se sirven en `/uploads/*`.
 - `package.json#prisma.seed` está deprecado en Prisma 7; si migras a Prisma 7, usa `prisma.config.ts`.

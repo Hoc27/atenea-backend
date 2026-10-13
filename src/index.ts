@@ -1,6 +1,6 @@
 import { buildApp } from "./app";
-import { config } from "./config";
-import { prisma } from "./db";
+import { env } from "./config/env";
+import { prisma } from "./lib/prisma";
 
 async function main(): Promise<void> {
   const app = await buildApp();
@@ -19,7 +19,7 @@ async function main(): Promise<void> {
     void shutdown("SIGTERM");
   });
 
-  await app.listen({ port: config.PORT, host: config.HOST });
+  await app.listen({ port: env.PORT, host: env.HOST });
 }
 
 main().catch(async (err) => {

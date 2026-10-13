@@ -62,6 +62,7 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
       cb(null, false);
     },
     credentials: true,
+    methods: ["GET", "HEAD", "POST", "PUT", "DELETE"],
   });
 
   await app.register(rateLimit, {

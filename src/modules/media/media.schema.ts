@@ -3,9 +3,10 @@ import { z } from "zod";
 export const mediaParams = z.object({ id: z.string().min(1) });
 
 // Query con strip (no strict): los navegadores añaden parámetros ruidosos.
+// `limit` tiene tope por defecto (nunca se devuelve la tabla completa).
 export const listMediaQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(200).optional(),
-  offset: z.coerce.number().int().min(0).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
   area: z.string().max(120).optional(),
   q: z.string().max(120).optional(),
 });

@@ -98,8 +98,9 @@ export function createPostsService(db: PrismaClient) {
       const existing = await db.post.findUnique({ where: { id } });
       if (!existing) throw Errors.notFound("Noticia");
 
-      if (input.slug && input.slug !== existing.slug) {
-        const clash = await db.post.findUnique({ where: { slug: input.slug } });
+      const nextSlug = input.slug?.trim() || existing.slug;
+      if (nextSlug !== existing.slug) {
+        const clash = await db.post.findUnique({ where: { slug: nextSlug } });
         if (clash) throw Errors.conflict("El slug ya existe");
       }
 
@@ -108,7 +109,7 @@ export function createPostsService(db: PrismaClient) {
         where: { id },
         data: {
           title: input.title ?? existing.title,
-          slug: input.slug ?? existing.slug,
+          slug: nextSlug,
           excerpt: input.excerpt === undefined ? existing.excerpt : input.excerpt,
           content: input.content ?? existing.content,
           coverImage:

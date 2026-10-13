@@ -15,9 +15,8 @@ export const adminUserOut = z.object({
 });
 export const loginOut = z.object({ user: adminUserOut });
 export const logoutOut = z.object({ ok: z.literal(true) });
-export const meOut = z.object({
-  user: z.object({ sub: z.string(), email: z.string(), name: z.string() }),
-});
+// Misma forma que `loginOut` para que el frontend use `user.id` igual en ambos.
+export const meOut = z.object({ user: adminUserOut });
 
 export type LoginBody = z.infer<typeof loginBody>;
 export type AdminUser = z.infer<typeof adminUserOut>;

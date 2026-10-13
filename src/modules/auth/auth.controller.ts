@@ -32,6 +32,12 @@ export function createAuthController(service: AuthService, deps: Deps) {
       return { ok: true as const };
     },
 
-    me: async (req: Req) => ({ user: req.user }),
+    me: async (req: Req) => ({
+      user: {
+        id: req.user.sub,
+        email: req.user.email,
+        name: req.user.name,
+      },
+    }),
   };
 }

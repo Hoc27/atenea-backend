@@ -14,7 +14,8 @@ export const listPostsQuery = z.object({
 export const createPostBody = z
   .object({
     title: z.string().min(1),
-    slug: z.string().min(1).max(100).optional(),
+    // El frontend puede enviar "" (se genera automático); el service lo resuelve.
+    slug: z.string().max(100).optional(),
     excerpt: z.string().nullable().optional(),
     content: z.string().optional(),
     coverImage: z.string().nullable().optional(),
@@ -27,7 +28,8 @@ export const createPostBody = z
 export const updatePostBody = z
   .object({
     title: z.string().min(1).optional(),
-    slug: z.string().min(1).max(100).optional(),
+    // "" significa "mantener el slug actual" (ver service).
+    slug: z.string().max(100).optional(),
     excerpt: z.string().nullable().optional(),
     content: z.string().optional(),
     coverImage: z.string().nullable().optional(),

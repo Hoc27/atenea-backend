@@ -144,7 +144,11 @@ export async function buildApp() {
       cb(null, false);
     },
     credentials: true,
-    methods: ["GET", "HEAD", "POST", "PUT", "DELETE"],
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"],
+    // Encabezados que el panel envía en mutaciones (fuerzan preflight).
+    allowedHeaders: ["Content-Type", "x-csrf-token"],
+    // Cachea el preflight 24 h para no repetirlo en cada petición.
+    maxAge: 86400,
   });
 
   await app.register(rateLimit, {
@@ -198,6 +202,8 @@ export async function buildApp() {
   // Deny-by-default: toda ruta exige autenticación salvo que se marque
   // explícitamente con `config: { public: true }` o sea un archivo estático.
   app.addHook("onRequest", async (req, reply) => {
+    // Los preflight CORS (OPTIONS) nunca requieren autenticación.
+    if (req.method === "OPTIONS") return;
     if (req.url.startsWith("/uploads/")) return;
     const routeConfig = (req.routeOptions?.config ?? {}) as { public?: boolean };
     if (routeConfig.public === true) return;

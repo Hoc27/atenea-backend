@@ -34,6 +34,11 @@ Seguimiento del endurecimiento del backend contra la skill `fastify-secure-backe
 
 > **Deviaciones conscientes:** (1) cuerpo de error `{ error: string, code, requestId }` para no romper el frontend; (2) paginación offset/`take` acotado en vez de cursor; (3) `config/env.ts` y `lib/http.ts` adaptados al proyecto.
 
+## Correcciones puntuales
+
+- [x] **CORS / preflight**: `methods` explícitos `GET,HEAD,POST,PUT,PATCH,DELETE`, `allowedHeaders` (`Content-Type`, `x-csrf-token`) y `maxAge` 24 h. El hook deny-by-default ahora **ignora `OPTIONS`** (antes podía responder 401 al preflight si el origen no estaba en la allowlist).
+- [ ] **Redeploy del backend**: la instancia desplegada responde `Access-Control-Allow-Methods: GET,HEAD,POST` (build antiguo o proxy que reescribe la cabecera). El código actual emite `GET,HEAD,POST,PUT,PATCH,DELETE` (verificado). Desplegar de nuevo y, si hay proxy inverso, permitir/reenviar CORS sin sobrescribirlo.
+
 ## Fase 3 — Pendiente ⏳
 
 - [x] **Módulo `privacy/`** (derechos del titular, gestionados desde admin):

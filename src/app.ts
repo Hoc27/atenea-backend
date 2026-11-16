@@ -150,6 +150,9 @@ export async function buildApp() {
     allowedHeaders: ["Content-Type", "x-csrf-token"],
     // Cachea el preflight 24 h para no repetirlo en cada petición.
     maxAge: 86400,
+    // false: responde al preflight aunque la ruta no esté registrada aún.
+    // Necesario porque los plugins se registran después de este hook.
+    strictPreflight: false,
   });
 
   await app.register(rateLimit, {

@@ -13,31 +13,38 @@ export async function authenticate(
 ): Promise<void> {
   try {
     await req.jwtVerify();
-    const admin = await prisma.admin.findUnique({
-      where: { id: req.user.sub },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        deletedAt: true,
-        sessionVersion: true,
-      },
-    });
-    if (
-      !admin ||
-      admin.deletedAt ||
-      admin.sessionVersion !== (req.user.sv ?? 0)
-    ) {
-      throw new Error("Sesión inválida");
-    }
-    req.authAdmin = admin;
   } catch {
     await reply.code(401).send({
       error: "No autorizado",
       code: "UNAUTHORIZED",
       requestId: req.id,
     });
+    return;
   }
+
+  const admin = await prisma.admin.findUnique({
+    where: { id: req.user.sub },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      deletedAt: true,
+      sessionVersion: true,
+    },
+  });
+  if (
+    !admin ||
+    admin.deletedAt ||
+    admin.sessionVersion !== (req.user.sv ?? 0)
+  ) {
+    await reply.code(401).send({
+      error: "No autorizado",
+      code: "UNAUTHORIZED",
+      requestId: req.id,
+    });
+    return;
+  }
+  req.authAdmin = admin;
 }
 
 // Puente único entre Fastify y la lógica: contexto plano para los services.

@@ -39,10 +39,12 @@ transferencia (art. 44-49). Elegir región UE simplifica el análisis.
 
 ## 4. Controles técnicos implementados
 
-- Autenticación JWT (exp/jti/iss/aud), deny-by-default, CSRF, rate limiting.
+- Autenticación JWT (exp/jti/iss/aud + `sv`), deny-by-default, CSRF, rate limiting.
 - Validación Zod de entrada y **serialización de salida** (evita exposición excesiva).
 - Cifrado AES-256-GCM de los datos de admisión; secretos fuera del repo.
 - Auditoría append-only de login y acciones de administración.
+- Gestión de usuarios con baja lógica; cambiar la contraseña o desactivar una
+  cuenta incrementa `sessionVersion` e invalida los JWT ya emitidos.
 - Derechos del titular gestionados vía `/api/admin/privacy/*` (export, borrado,
   restricción) — art. 15/17/18/20.
 - Retención automatizable (`pnpm db:retention`, con `--dry-run`).

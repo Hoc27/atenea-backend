@@ -176,9 +176,14 @@ export function createUsersService({ db, hash, verify, audit }: Deps) {
 
       const target = await db.admin.findUnique({
         where: { id },
-        select: { id: true },
+        select: { id: true, deletedAt: true },
       });
       if (!target) throw Errors.notFound("Usuario");
+      if (target.deletedAt) {
+        throw Errors.badRequest(
+          "Reactiva el usuario antes de cambiar su contraseña"
+        );
+      }
 
       const passwordHash = await hash(input.newPassword);
       await db.admin.update({

@@ -30,6 +30,7 @@ import { mediaRoutes } from "./modules/media/media.routes";
 import { downloadsRoutes } from "./modules/downloads/downloads.routes";
 import { admissionRoutes } from "./modules/admission/admission.routes";
 import { privacyRoutes } from "./modules/privacy/privacy.routes";
+import { restoreRoutes } from "./modules/restore/restore.routes";
 
 export async function buildApp() {
   const app = Fastify({
@@ -248,6 +249,8 @@ export async function buildApp() {
   await app.register(downloadsRoutes);
   await app.register(admissionRoutes);
   await app.register(privacyRoutes);
+  // TEMPORAL: restauración de archivos perdidos. Comentar cuando no se necesite.
+  await app.register(restoreRoutes);
 
   return app;
 }

@@ -1,16 +1,9 @@
 /**
  * Ruta de restauración puntual de archivos perdidos en el servidor.
+ * Acepta UN archivo por request para evitar timeouts en Traefik/Dokploy.
  *
- * USO:
- *   POST /api/admin/restore-uploads
- *   Content-Type: multipart/form-data
- *   Authorization: Bearer <token>   (o cookie de sesión)
- *
- *   Envía los archivos con el campo "files" (múltiples).
- *   El nombre original del archivo se preserva tal cual, sin re-encodear.
- *
- * DESACTIVAR:
- *   En app.ts comenta la línea:  await app.register(restoreRoutes);
+ * DESACTIVAR cuando termine:
+ *   En app.ts comenta:  await app.register(restoreRoutes);
  */
 
 import { createWriteStream } from "node:fs";
@@ -24,16 +17,14 @@ export const restoreRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post(
     "/api/admin/restore-uploads",
     {
-      // Sin csrfProtection: se llama como herramienta puntual, no desde el panel.
-      // La autenticación JWT sigue activa (deny-by-default en app.ts).
-      bodyLimit: 500 * 1024 * 1024, // 500 MB por request
+      bodyLimit: env.UPLOAD_MAX_MB * 1024 * 1024,
     },
     async (req, reply) => {
       await mkdir(env.UPLOAD_DIR, { recursive: true });
 
-      const saved: string[] = [];
-      const skipped: string[] = [];
-      const errors: { name: string; reason: string }[] = [];
+      let saved: string | null = null;
+      let skipped = false;
+      let error: string | null = null;
 
       for await (const part of req.parts()) {
         if (part.type !== "file") continue;
@@ -42,39 +33,36 @@ export const restoreRoutes: FastifyPluginAsyncZod = async (app) => {
 
         if (!originalName) {
           part.file.resume();
-          errors.push({ name: "(sin nombre)", reason: "Archivo sin nombre" });
-          continue;
+          error = "Archivo sin nombre";
+          break;
         }
 
-        // Solo letras, números, guiones, puntos y guiones bajos. Sin path traversal.
+        // Bloquea path traversal y nombres fuera de charset UUID/extensión.
         if (!/^[\w\-]+\.[a-zA-Z0-9]+$/.test(originalName)) {
           part.file.resume();
-          errors.push({ name: originalName, reason: "Nombre de archivo inválido" });
-          continue;
+          error = "Nombre de archivo inválido";
+          break;
         }
 
         const dest = path.join(env.UPLOAD_DIR, originalName);
 
-        // No sobreescribir archivos que ya existen.
         const exists = await stat(dest).then(() => true).catch(() => false);
         if (exists) {
           part.file.resume();
-          skipped.push(originalName);
-          continue;
+          skipped = true;
+          break;
         }
 
         try {
           await pipeline(part.file, createWriteStream(dest));
-          saved.push(originalName);
+          saved = originalName;
         } catch (err) {
-          errors.push({
-            name: originalName,
-            reason: err instanceof Error ? err.message : "Error desconocido",
-          });
+          error = err instanceof Error ? err.message : "Error desconocido";
         }
+        break; // solo procesamos el primer archivo
       }
 
-      return reply.code(200).send({ saved, skipped, errors });
+      return reply.code(200).send({ saved, skipped, error });
     }
   );
 };

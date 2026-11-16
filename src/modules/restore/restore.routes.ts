@@ -38,7 +38,7 @@ export const restoreRoutes: FastifyPluginAsyncZod = async (app) => {
         }
 
         // Bloquea path traversal y nombres fuera de charset UUID/extensión.
-        if (!/^[\w\-]+\.[a-zA-Z0-9]+$/.test(originalName)) {
+        if (!/^[\w-]+\.[a-zA-Z0-9]+$/.test(originalName)) {
           part.file.resume();
           error = "Nombre de archivo inválido";
           break;

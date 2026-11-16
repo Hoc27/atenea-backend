@@ -15,6 +15,8 @@ model Admin {
   email        String    @unique
   name         String
   passwordHash String
+  /// Se incrementa al cambiar la contraseña o desactivar la cuenta para invalidar JWT.
+  sessionVersion Int     @default(0)
   deletedAt    DateTime? // baja lógica: impide el login sin borrar el registro
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

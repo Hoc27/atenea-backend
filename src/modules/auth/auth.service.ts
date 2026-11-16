@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { Errors } from "../../lib/errors";
+import type { AuthUser } from "../../lib/auth";
 import type { PublicCtx } from "../../lib/context";
 import type { AuditEvent } from "../audit/audit.service";
 
@@ -11,7 +12,7 @@ type Deps = {
 
 export function createAuthService({ db, verify, audit }: Deps) {
   return {
-    async login(ctx: PublicCtx, input: { email: string; password: string }) {
+    async login(ctx: PublicCtx, input: { email: string; password: string }): Promise<AuthUser> {
       const admin = await db.admin.findUnique({
         where: { email: input.email.toLowerCase() },
       });
@@ -38,7 +39,12 @@ export function createAuthService({ db, verify, audit }: Deps) {
         ipTrunc: ctx.ipTrunc,
       }).catch(() => undefined);
 
-      return { id: active.id, email: active.email, name: active.name };
+      return {
+        id: active.id,
+        email: active.email,
+        name: active.name,
+        sessionVersion: active.sessionVersion,
+      };
     },
   };
 }

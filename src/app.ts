@@ -31,6 +31,7 @@ import { downloadsRoutes } from "./modules/downloads/downloads.routes";
 import { admissionRoutes } from "./modules/admission/admission.routes";
 import { privacyRoutes } from "./modules/privacy/privacy.routes";
 import { restoreRoutes } from "./modules/restore/restore.routes";
+import { usersRoutes } from "./modules/users/users.routes";
 
 export async function buildApp() {
   const app = Fastify({
@@ -246,6 +247,7 @@ export async function buildApp() {
   );
 
   await app.register(authRoutes);
+  await app.register(usersRoutes);
   await app.register(contentRoutes);
   await app.register(postsRoutes);
   await app.register(mediaRoutes);

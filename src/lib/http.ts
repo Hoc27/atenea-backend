@@ -4,7 +4,7 @@ import type { FastifyRequest } from "fastify";
 // handlers y el ZodTypeProvider (mismo enfoque que la plantilla de la skill).
 export type Req<Ext extends object = object> = Pick<
   FastifyRequest,
-  "id" | "ip" | "user" | "parts"
+  "id" | "ip" | "user" | "parts" | "authAdmin"
 > &
   Ext;
 
